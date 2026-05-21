@@ -1,5 +1,9 @@
+from django.db.models import Sum, Count, Avg
+from django.utils import timezone
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 from .models import Category, Expense
 from .serializers import CategorySerializer, ExpenseSerializer
 
@@ -25,6 +29,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You do not have permission to delete this category.")
         instance.delete()
 
+
 class ExpenseViewSet(viewsets.ModelViewSet):
     serializer_class = ExpenseSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -45,3 +50,61 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         if instance.user != self.request.user:
             raise PermissionDenied("You do not have permission to delete this expense.")
         instance.delete()
+
+    @action(detail=False, methods=['get'], url_path='summary')
+    def summary(self, request):
+        now = timezone.now()
+        queryset = self.get_queryset().filter(
+            date__year=now.year,
+            date__month=now.month
+        )
+
+        aggregates = queryset.aggregate(
+            total=Sum('amount'),
+            expense_count=Count('id'),
+            average=Avg('amount')
+        )
+
+        return Response({
+            'month': now.strftime('%B %Y'),
+            'total': aggregates['total'] or '0.00',
+            'expense_count': aggregates['expense_count'] or 0,
+            'average': round(aggregates['average'], 2) if aggregates['average'] else '0.00',
+        })
+
+    @action(detail=False, methods=['get'], url_path='by-category')
+    def by_category(self, request):
+        queryset = self.get_queryset()
+
+        total_spent = queryset.aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+
+        categories = (
+            Category.objects
+            .filter(user=request.user)
+            .annotate(
+                total=Sum('expenses__amount'),
+                expense_count=Count('expenses__id')
+            )
+            .filter(total__isnull=False)
+            .order_by('-total')
+        )
+
+        data = []
+        for cat in categories:
+            percentage = (
+                round((cat.total / total_spent) * 100, 1)
+                if total_spent > 0 else 0
+            )
+            data.append({
+                'category_id': cat.id,
+                'category_name': cat.name,
+                'color': cat.color,
+                'icon': cat.icon,
+                'total': cat.total,
+                'expense_count': cat.expense_count,
+                'percentage': percentage,
+            })
+
+        return Response(data)
