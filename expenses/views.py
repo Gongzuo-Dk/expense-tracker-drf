@@ -11,6 +11,9 @@ from .serializers import CategorySerializer, ExpenseSerializer
 class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated]
+    search_fields = ['name']
+    ordering_fields = ['name']
+    ordering = ['name']
 
     def get_queryset(self):
         return Category.objects.filter(user=self.request.user)
@@ -30,9 +33,18 @@ class CategoryViewSet(viewsets.ModelViewSet):
         instance.delete()
 
 
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, permissions, filters
+from .filters import ExpenseFilter
+
+
 class ExpenseViewSet(viewsets.ModelViewSet):
     serializer_class = ExpenseSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filterset_class = ExpenseFilter
+    ordering_fields = ['date', 'amount', 'created_at']
+    ordering = ['-date']
+    search_fields = ['description']
 
     def get_queryset(self):
         return Expense.objects.filter(user=self.request.user)
@@ -58,13 +70,11 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             date__year=now.year,
             date__month=now.month
         )
-
         aggregates = queryset.aggregate(
             total=Sum('amount'),
             expense_count=Count('id'),
             average=Avg('amount')
         )
-
         return Response({
             'month': now.strftime('%B %Y'),
             'total': aggregates['total'] or '0.00',
@@ -75,11 +85,9 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='by-category')
     def by_category(self, request):
         queryset = self.get_queryset()
-
         total_spent = queryset.aggregate(
             total=Sum('amount')
         )['total'] or 0
-
         categories = (
             Category.objects
             .filter(user=request.user)
@@ -90,7 +98,6 @@ class ExpenseViewSet(viewsets.ModelViewSet):
             .filter(total__isnull=False)
             .order_by('-total')
         )
-
         data = []
         for cat in categories:
             percentage = (
@@ -106,5 +113,4 @@ class ExpenseViewSet(viewsets.ModelViewSet):
                 'expense_count': cat.expense_count,
                 'percentage': percentage,
             })
-
         return Response(data)
