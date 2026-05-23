@@ -321,5 +321,5 @@ The test suite covers:
 ## Author
 
 Daniel K
-GitHub: https://github.com/Gongzuo-Dk
+GitHub: https://github.com/Gongzuo-Dk  
 LinkedIn: https://www.linkedin.com/in/danylo-kulynych/
