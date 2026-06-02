@@ -6,6 +6,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from .models import Category, Expense
 from .serializers import CategorySerializer, ExpenseSerializer
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, permissions, filters
+from .filters import ExpenseFilter
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -31,11 +34,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
         if instance.user != self.request.user:
             raise PermissionDenied("You do not have permission to delete this category.")
         instance.delete()
-
-
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, permissions, filters
-from .filters import ExpenseFilter
 
 
 class ExpenseViewSet(viewsets.ModelViewSet):
