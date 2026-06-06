@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'rest_framework.authtoken',    # DRF's token auth system
+    'dj_rest_auth.registration',
     'dj_rest_auth',                # REST auth endpoints
     'allauth',                     # allauth core
     'allauth.account',             # allauth account management
