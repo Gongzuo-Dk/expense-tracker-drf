@@ -5,7 +5,9 @@ A fully featured REST API for tracking personal expenses, built with Django REST
 ![Python](https://img.shields.io/badge/Python-3.13-blue)
 ![Django](https://img.shields.io/badge/Django-6.0-green)
 ![DRF](https://img.shields.io/badge/Django_REST_Framework-API-red)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue)  
+
+**Live API:** https://web-production-82253a.up.railway.app/
 
 ## About
 
